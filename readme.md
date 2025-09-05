@@ -1,9 +1,7 @@
 # HavenStay – Full-Stack Travel & Stay Booking Platform 🏡
 
-[![MERN Stack](https://img.shields.io/badge/MERN-Stack-green)]()
 [![MongoDB](https://img.shields.io/badge/MongoDB-Database-brightgreen)]()
 [![Express.js](https://img.shields.io/badge/Express.js-Backend-lightgrey)]()
-[![React](https://img.shields.io/badge/React-Frontend-blue)]()
 [![Node.js](https://img.shields.io/badge/Node.js-Server-success)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)]()
 
