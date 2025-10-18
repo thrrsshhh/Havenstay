@@ -1,56 +1,64 @@
-require("dotenv").config();
+require("dotenv").config({ path: "../.env" });
 const mongoose = require("mongoose");
-const initData = require("./Data.js");
+const { data: initData } = require("./Data.js");
 const Listing = require("../Models/listings.js");
 const mbxGeocoding = require("@mapbox/mapbox-sdk/services/geocoding");
 const geocodingClient = mbxGeocoding({ accessToken: process.env.MAP_TOKEN });
 
 async function main() {
-  await mongoose.connect(process.env.MONGO_URL);
-  console.log("Connected To DB");
-  await fetchAndAddCoordinates();
-  await initializeDatabase();
+  try {
+    await mongoose.connect(process.env.MONGO_URL);
+    await fetchAndAddCoordinates();
+    await initializeDatabase();
+    mongoose.connection.close();
+  } catch (err) {
+    console.error(err);
+  }
 }
 
-main().catch((err) => {
-  console.log(err);
-});
+main();
 
-const initializeDatabase = async () => {
+async function initializeDatabase() {
   try {
     await Listing.deleteMany({});
-    initData.data = initData.data.map((obj) => ({ ...obj, owner: "your_user_object_id" }));
-    await Listing.insertMany(initData.data);
-    console.log("Data Was Initialized");
-  } catch (error) {
-    console.error("Error initializing the database:", error);
-  }
-};
+    if (!initData || initData.length === 0) return;
 
-// Function to fetch coordinates from MapBox Geocoding API
+    const ownerId = "68f32644f8fd09ea89eb3266"; // replace with valid user ID
+    const updatedData = initData.map((obj) => ({
+      ...obj,
+      owner: ownerId,
+    }));
+
+    await Listing.insertMany(updatedData);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 async function fetchCoordinates(location) {
   try {
-    let response = await geocodingClient
+    const response = await geocodingClient
       .forwardGeocode({
         query: location,
         limit: 1,
       })
       .send();
+
     if (response.body.features && response.body.features.length > 0) {
-      const geometry = response.body.features[0].geometry;
-      return geometry;
+      return response.body.features[0].geometry;
+    } else {
+      return { type: "Point", coordinates: [0, 0] };
     }
-    throw new Error("Location not found");
   } catch (error) {
-    console.error(`Error fetching coordinates for ${location}:`, error);
-    return null;
+    return { type: "Point", coordinates: [0, 0] };
   }
 }
 
-// Function to fetch and add coordinates to initData
-const fetchAndAddCoordinates = async () => {
-  for (let place of initData.data) {
+async function fetchAndAddCoordinates() {
+  if (!initData || initData.length === 0) return;
+
+  for (let place of initData) {
     const geometry = await fetchCoordinates(place.location);
     place.geometry = geometry;
   }
-};
+}
